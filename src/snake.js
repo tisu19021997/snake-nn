@@ -21,21 +21,42 @@ class Snake {
     return [x, y];
   }
 
+  getDir() {
+    return {
+      x: this.xDir,
+      y: this.yDir,
+    }
+  }
+
   move(direction = DOWN) {
+    const dir = this.getDir();
+
     switch (direction) {
       case UP:
+        if (dir.x === 0 && dir.y === 1) {
+          break;
+        }
         this.setDir(0, -1);
         break;
 
       case DOWN:
+        if (dir.x === 0 && dir.y === -1) {
+          break;
+        }
         this.setDir(0, 1);
         break;
 
       case RIGHT:
+        if (dir.x === -1 && dir.y === 0) {
+          break;
+        }
         this.setDir(1, 0);
         break;
 
       case LEFT:
+        if (dir.x === 1 && dir.y === 0) {
+          break;
+        }
         this.setDir(-1, 0);
         break;
     }

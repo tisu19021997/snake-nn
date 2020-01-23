@@ -1,5 +1,6 @@
 let snake;
 let food;
+let game;
 let resolution = 10;
 let trueWidth;
 let trueHeight;
@@ -7,54 +8,37 @@ let trueHeight;
 ////////////////////////////////////////////////
 
 function setup() {
-  createCanvas(400, 400);
+  createCanvas(200, 200);
   frameRate(10);
 
-  trueWidth = width / resolution;
-  trueHeight = height / resolution;
+  w = width / resolution;
+  h = height / resolution;
 
-  startGame();
+  game = new Game(w, h, resolution);
+  game.start();
 }
 
 function draw() {
   background(0);
   scale(resolution);
 
-  snake.update();
-  food.create();
+  game.snake.update();
+  game.food.create();
 
-  if (outOfBoard()) {
-    gameOver();
+  if (game.snakeOutOfBoard()) {
+    game.end();
   }
 
-  if (gotFood()) {
-    food = new Food(resolution);
-    snake.grow();
-  } else if (snake.selfBite()) {
-    gameOver();
+  if (game.snakeGotFood()) {
+    game.createNewFood();
+    game.snake.grow();
+  } else if (game.snake.selfBite()) {
+    game.end();
   }
 }
 
 ////////////////////////////////////////////////
 
 function keyPressed() {
-  snake.move(keyCode);
-}
-
-function gotFood() {
-  return snake.body[0].x === food.x && snake.body[0].y === food.y;
-}
-
-function outOfBoard() {
-  return snake.body[0].x >= trueWidth || snake.body[0].y >= trueHeight || snake.body[0].x < 0 || snake.body[0].y < 0;
-}
-
-function startGame() {
-  snake = new Snake();
-  food = new Food(resolution);
-}
-
-function gameOver() {
-  alert(`Game Over!!! Your Score: ${snake.length}`);
-  startGame();
+  game.snake.move(keyCode);
 }

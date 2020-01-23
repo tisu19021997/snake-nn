@@ -1,7 +1,7 @@
 class Food {
-  constructor(resolution) {
-    this.x = floor(random(floor(width / resolution)));
-    this.y = floor(random(floor(height / resolution)));
+  constructor(boardW, boardH) {
+    this.x = floor(random(floor(boardW)));
+    this.y = floor(random(floor(boardH)));
   }
 
   create() {
