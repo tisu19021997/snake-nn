@@ -1,7 +1,8 @@
 class Food {
-  constructor(boardW, boardH) {
-    this.x = floor(random(floor(boardW)));
-    this.y = floor(random(floor(boardH)));
+  place(coordinate) {
+    const { x, y } = coordinate;
+    this.x = x;
+    this.y = y;
   }
 
   create() {

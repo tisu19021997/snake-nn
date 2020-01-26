@@ -6,12 +6,17 @@ const DOWN = 40;
 class Snake {
   constructor() {
     this.body = [];
-    this.body[0] = createVector(1, 1);
+    // this.body[0] = createVector(5, 5);
 
     this.xDir = 0;
     this.yDir = 0;
 
     this.length = 1;
+  }
+
+  place(coordinate) {
+    const { x, y } = coordinate;
+    this.body[0] = createVector(x, y);
   }
 
   setDir(x, y) {
