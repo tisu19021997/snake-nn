@@ -1,43 +1,101 @@
-class DataProcessor {
-  constructor() {
-    this.on = false;
-  }
+const KEYS_LENGTH = 4;
 
-  recordData(snake, keyCode) {
-    if (this.on) {
-      console.log('is recording');
-      const snakeHead = snake.body[0];
+function processData(data) {
+  return tf.tidy(() => {
+    const dataByKey = [];
+    const targetsByKey = [];
 
-      // obstacles for the snake to consider
-      const obs1 = snakeHead.x === w - 1;
-      const obs2 = snakeHead.x - 1 === 0;
-      const obs3 = snakeHead.y === h - 1;
-      const obs4 = snakeHead.y - 1 === 0;
-      const inputs = boolArrayToInt([obs1, obs2, obs3, obs4]);
-
-      const newData = {
-        xs: inputs,
-        ys: keyCode,
-      };
-
-
-      this.appendToLocal(newData, 'data', []);
+    for (let i = 0; i < KEYS_LENGTH; ++i) {
+      dataByKey.push([]);
+      targetsByKey.push([]);
     }
+
+    for (const example of data) {
+      const key = example[example.length - 1];
+      const input = example.slice(0, example.length - 1);
+
+      dataByKey[key].push(input);
+      targetsByKey[key].push(key);
+    }
+
+    const xs = [];
+    const ys = [];
+
+    for (let i = 0; i < KEYS_LENGTH; ++i) {
+      const [x, y] = convertToTensors(dataByKey[i], targetsByKey[i])
+      xs.push(x);
+      ys.push(y);
+    }
+
+    const concatAxis = 0;
+
+    return [tf.concat(xs, concatAxis), tf.concat(ys, concatAxis)];
+  });
+}
+
+function convertToTensors(data, keys) {
+  const numExamples = data.length;
+
+  const indices = [];
+
+  for (let i = 0; i < numExamples; ++i) {
+    indices.push(i);
+  }
+  tf.util.shuffle(indices);
+
+  const shuffledData = [];
+  const shuffledTarget = [];
+
+  for (let i = 0; i < numExamples; ++i) {
+    shuffledData.push(data[indices[i]]);
+    shuffledTarget.push(keys[indices[i]]);
   }
 
-  appendToLocal(data, label, defaults) {
-    let localData = JSON.parse(localStorage.getItem(label)) || defaults;
-    localData.data.push(data);
-    localStorage.setItem(label, JSON.stringify(localData));
+  const xDims = shuffledData[0].length;
+  console.log(xDims)
+  const x = tf.tensor2d(shuffledData, [numExamples, xDims]);
+  const y = tf.oneHot(tf.tensor1d(shuffledTarget).toInt(), KEYS_LENGTH);
 
-    return true;
-  }
+  return [x, y];
+}
 
-  turnOn() {
-    return this.on = true;
-  }
+function createModel(xs) {
+  const model = tf.sequential();
 
-  turnOff() {
-    return this.on = false;
-  }
+  model.add(tf.layers.dense({
+    inputShape: [xs.shape[1]],
+    units: 1,
+    activation: 'sigmoid',
+  }));
+
+  model.add(tf.layers.dense({
+    units: 4,
+    activation: 'softmax',
+  }));
+
+  model.summary();
+
+  return model;
+}
+
+async function trainModel(model, xs, ys) {
+  const optimizer = tf.train.adam(LR);
+
+  model.compile({
+    optimizer: optimizer,
+    loss: 'categoricalCrossentropy',
+    metrics: ['accuracy'],
+  })
+
+  return await model.fit(xs, ys, {
+    epochs: 40,
+    callbacks: tfvis.show.fitCallbacks({
+        name: 'Training Performance',
+      },
+      ['loss', 'mse'], {
+        height: 200,
+        callbacks: ['onEpochEnd']
+      }
+    ),
+  })
 }

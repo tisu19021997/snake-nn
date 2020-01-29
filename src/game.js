@@ -52,12 +52,11 @@ class Game {
     this.isAuto = bool;
   }
 
-  // auto play to collect data
   autoplay() {
     if (this.isAuto) {
-      const key = floor(random(37, 40));
-      this.key = key;
-      this.snake.move(key);
+      this.key = random([37, 38, 39, 40]);
+      return this.snake.move(this.key);
     }
+    return false;
   }
 }

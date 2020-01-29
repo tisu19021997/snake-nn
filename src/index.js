@@ -1,6 +1,8 @@
 // game cofigurations
 let game;
 let resolution = 10;
+const WIDTH = 300;
+const HEIGHT = 300;
 
 // board weight and height
 let w;
@@ -8,10 +10,13 @@ let h;
 
 // nerual network
 let tensorData;
+let data;
 let model;
 let isTrained = false;
-const batchSize = 32;
-const epochs = 12;
+const KEY_LENGTH = 4;
+const BATCH_SIZE = 300;
+const EPOCHS = 40;
+const LR = 0.01;
 
 // data processor helper
 let dp;
@@ -21,7 +26,7 @@ let currentKey;
 ////////////////////////////////////////////////
 
 function setup() {
-  createCanvas(200, 200);
+  createCanvas(WIDTH, HEIGHT);
   frameRate(10);
 
   // width and height responding to the resolution
@@ -32,10 +37,7 @@ function setup() {
   game = new Game(w, h, resolution);
   game.start();
 
-  // neural network stuffs
-  model = createModel();
-
-  dp = new DataProcessor();
+  dp = new DataRecorder();
 }
 
 function draw() {
@@ -67,28 +69,27 @@ function draw() {
     const {
       snake
     } = game;
-    const snakeHead = snake.body[0];
 
-    // obstacles for the snake to consider
-    const obs1 = boolToInt(snakeHead.x === w - 1);
-    const obs2 = boolToInt(snakeHead.x - 1 === 0);
-    const obs3 = boolToInt(snakeHead.y === h - 1);
-    const obs4 = boolToInt(snakeHead.y - 1 === 0);
+    // convert current snake position to inputs
+    const input = tf.tensor2d(generateInputs(snake, w, h), [1, 2]);
+    input.print();
+    const prediction = model.predict(input);
+    // get the index of the highest posibility key
+    const indice = prediction.argMax(-1).dataSync()[0];
+    // convert index back to keyCode
+    const key = intToKeyCode(indice) + 1;
 
-    const inputs = [obs1, obs2, obs3, obs4];
-
-    const prediction = model.predict(tf.tensor2d(inputs, [1, 4])).round().dataSync();
-    const key = numToKeyCode(prediction[0]);
-    console.log(numToKeyCode(prediction[0]));
     snake.move(key);
   }
 
+
   if (game.isAuto) {
-    currentKey = game.key;
-    game.autoplay();
-    frameRate(50);
-    dp.turnOn();
-    dp.recordData(game.snake, currentKey);
+    if (game.key) {
+      currentKey = game.key;
+    }
+    dp.recordData(game.snake, currentKey, w, h);
+    // game.autoplay();
+    // frameRate(50);
   }
 }
 
@@ -100,98 +101,30 @@ function keyPressed() {
     currentKey = keyCode;
 
     dp.turnOn();
-    dp.recordData(game.snake, currentKey);
+    dp.recordData(game.snake, currentKey, w, h);
 
     return currentKey;
   }
 
   // press "t" to train
   if (keyCode === 84) {
-    loadJSON('../dataFull.json', async (data) => {
-      tensorData = dataToTensor(data);
-      console.log(tensorData);
-      const {
-        inputs,
-        keys
-      } = tensorData;
+    data = loadJSON('../dataFull.json', async (json) => {
+      const [x, y] = await processData(json);
+      model = createModel(x);
+      await trainModel(model, x, y);
 
-      await trainModel(model, inputs, keys);
-
-      //const prediction = model.predict(tf.tensor2d([0, 1, 0, 1], [1, 4])).round().dataSync();
       isTrained = true;
     });
+
   }
 
-  // press "a" for autoplay
+  // press "a" to autoplay
   if (keyCode === 65) {
     game.setAuto(true);
   }
+
+  // press "r" to record data
+  if (keyCode === 82) {
+    dp.turnOn();
+  }
 }
-
-function createModel() {
-  const model = tf.sequential();
-
-  model.add(tf.layers.dense({
-    inputShape: [4],
-    units: 1,
-    useBias: true
-  }));
-
-  model.add(tf.layers.dense({
-    units: 1,
-    useBias: true
-  }));
-
-  return model;
-}
-
-function dataToTensor(data) {
-  return tf.tidy(() => {
-    tf.util.shuffle(data);
-
-    const inputs = data.map((d) => d.xs);
-    const keys = data.map((d) => d.ys);
-
-    const inputTensor = tf.tensor2d(inputs, [inputs.length, 4]);
-    const keyTensor = tf.tensor2d(keys, [keys.length, 1]);
-
-    // normalize the data using min-max scaling
-    // const normalizedKeys = minMaxNormalize(keyTensor);
-
-    return {
-      inputs: inputTensor,
-      keys: keyTensor,
-    }
-  })
-}
-
-async function trainModel(model, inputs, keys) {
-  model.compile({
-    optimizer: tf.train.adam(),
-    loss: tf.losses.meanSquaredError,
-    metrics: ['mse'],
-  })
-
-  return await model.fit(inputs, keys, {
-    batchSize,
-    epochs,
-    shuffle: true,
-    callbacks: tfvis.show.fitCallbacks({
-        name: 'Training Performance',
-      },
-      ['loss', 'mse'], {
-        height: 200,
-        callbacks: ['onEpochEnd']
-      }
-    ),
-  })
-}
-
-function minMaxNormalize(tensor) {
-  const min = tensor.min();
-  const max = tensor.max();
-
-  // (value - min / max - min)
-  return tensor.sub(min).div(max.sub(min));
-};
-
