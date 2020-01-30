@@ -78,12 +78,12 @@ function createModel(xs) {
 
   model.add(tf.layers.dense({
     inputShape: [xs.shape[1]],
-    units: 4,
+    units: 16,
     activation: 'sigmoid',
   }));
 
   model.add(tf.layers.dense({
-    units: 256,
+    units: 1024,
     activation: 'relu',
   }));
 
@@ -97,8 +97,8 @@ function createModel(xs) {
   return model;
 }
 
-async function trainModel(model, xTrain, yTrain, xTest, yTest) {
-  const optimizer = tf.train.adam(LR);
+async function trainModel(model, xTrain, yTrain, xTest, yTest, learningRate = 0.01) {
+  const optimizer = tf.train.adam(learningRate);
 
   model.compile({
     optimizer: optimizer,

@@ -9,13 +9,16 @@ let w;
 let h;
 
 // nerual network
-let tensorData;
+let dataURL = 'https://tisu19021997.github.io/snake-nn/data.json';
 let data;
 let model;
 let isTrained = false;
-const BATCH_SIZE = 300;
-const EPOCHS = 40;
-const LR = 0.05;
+let lr;
+let ts;
+
+// inputs
+let lrInput;
+let tsInput;
 
 // data processor helper
 let dp;
@@ -37,6 +40,9 @@ function setup() {
   game.start();
 
   dp = new DataRecorder();
+
+  const trainBtn = createButton('Train');
+  trainBtn.mousePressed(getDataAndTrain);
 }
 
 function draw() {
@@ -111,8 +117,8 @@ function keyPressed() {
   if (keyCode === 84) {
     isTrained = false;
 
-    data = loadJSON('../data.json', async (json) => {
-      const [xTrain, yTrain, xTest, yTest] = await processData(json);
+    data = loadJSON(dataURL, async (json) => {
+      const [xTrain, yTrain, xTest, yTest] = await processData(json, ts);
       model = createModel(xTrain);
       await trainModel(model, xTrain, yTrain, xTest, yTest);
 
@@ -135,4 +141,20 @@ function keyPressed() {
   if (keyCode === 83) {
     model.save('localstorage://snake-model');
   }
+}
+
+function getDataAndTrain() {
+  isTrained = false;
+  lr = parseFloat(document.getElementById('lr').value) || 0.01;
+  ts = parseFloat(document.getElementById('ts').value) || 0.2;
+
+  console.log(typeof ts, typeof lr);
+
+  data = loadJSON(dataURL, async (json) => {
+    const [xTrain, yTrain, xTest, yTest] = await processData(json, ts);
+    model = createModel(xTrain);
+    await trainModel(model, xTrain, yTrain, xTest, yTest, lr);
+
+    isTrained = true;
+  })
 }
