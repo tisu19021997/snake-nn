@@ -13,10 +13,9 @@ let tensorData;
 let data;
 let model;
 let isTrained = false;
-const KEY_LENGTH = 4;
 const BATCH_SIZE = 300;
 const EPOCHS = 40;
-const LR = 0.01;
+const LR = 0.05;
 
 // data processor helper
 let dp;
@@ -71,13 +70,15 @@ function draw() {
     } = game;
 
     // convert current snake position to inputs
-    const input = tf.tensor2d(generateInputs(snake, w, h), [1, 2]);
+    const input = tf.tensor2d(generateInputs(snake, w, h), [1, 4]);
     input.print();
     const prediction = model.predict(input);
     // get the index of the highest posibility key
     const indice = prediction.argMax(-1).dataSync()[0];
     // convert index back to keyCode
-    const key = intToKeyCode(indice) + 1;
+    const key = intToKeyCode(indice);
+
+    console.log(key);
 
     snake.move(key);
   }
@@ -108,10 +109,12 @@ function keyPressed() {
 
   // press "t" to train
   if (keyCode === 84) {
-    data = loadJSON('../dataFull.json', async (json) => {
-      const [x, y] = await processData(json);
-      model = createModel(x);
-      await trainModel(model, x, y);
+    isTrained = false;
+
+    data = loadJSON('../data.json', async (json) => {
+      const [xTrain, yTrain, xTest, yTest] = await processData(json);
+      model = createModel(xTrain);
+      await trainModel(model, xTrain, yTrain, xTest, yTest);
 
       isTrained = true;
     });
@@ -126,5 +129,10 @@ function keyPressed() {
   // press "r" to record data
   if (keyCode === 82) {
     dp.turnOn();
+  }
+
+  // press "s" to save the model
+  if (keyCode === 83) {
+    model.save('localstorage://snake-model');
   }
 }

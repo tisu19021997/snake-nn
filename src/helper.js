@@ -49,7 +49,7 @@ function boolToInt(bool) {
  * @param {number} num 
  */
 function intToKeyCode(num) {
-  return 36 + num;
+  return 37 + num;
 }
 
 /**
@@ -58,7 +58,7 @@ function intToKeyCode(num) {
  * @param {number} key 
  */
 function keyCodeToInt(key) {
-  return key - 36;
+  return key - 37;
 }
 
 /**
@@ -84,9 +84,11 @@ function generateInputs(snake, boardW, boardH) {
   const head = snake.body[0];
 
   // snake's x/y is about to be larger than the board width/height
-  const cond1 = boolToInt(head.x + 2 >= boardW || head.y + 2 >= boardH);
+  const cond1 = boolToInt(head.x + 2 >= boardW);
+  const cond2 = boolToInt(head.y + 2 >= boardH);
   // snake's x/y is about to be negative
-  const cond2 = boolToInt(head.x - 2 <= 0 || head.y - 2 <= 0);
+  const cond3 = boolToInt(head.x - 2 <= 0);
+  const cond4 = boolToInt(head.y - 2 <= 0);
 
-  return [cond1, cond2];
+  return [cond1, cond2, cond3, cond4];
 }

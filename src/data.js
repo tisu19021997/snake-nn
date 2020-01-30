@@ -1,6 +1,6 @@
 const KEYS_LENGTH = 4;
 
-function processData(data) {
+function processData(data, testSplit = 0.2) {
   return tf.tidy(() => {
     const dataByKey = [];
     const targetsByKey = [];
@@ -13,27 +13,33 @@ function processData(data) {
     for (const example of data) {
       const key = example[example.length - 1];
       const input = example.slice(0, example.length - 1);
-
       dataByKey[key].push(input);
       targetsByKey[key].push(key);
     }
 
-    const xs = [];
-    const ys = [];
+    const xTrains = [];
+    const yTrains = [];
+    const xTests = [];
+    const yTests = [];
 
     for (let i = 0; i < KEYS_LENGTH; ++i) {
-      const [x, y] = convertToTensors(dataByKey[i], targetsByKey[i])
-      xs.push(x);
-      ys.push(y);
+      const [xTrain, yTrain, xTest, yTest] = convertToTensors(dataByKey[i], targetsByKey[i], testSplit)
+      xTrains.push(xTrain);
+      yTrains.push(yTrain);
+      xTests.push(xTest);
+      yTests.push(yTest);
     }
 
     const concatAxis = 0;
 
-    return [tf.concat(xs, concatAxis), tf.concat(ys, concatAxis)];
+    return [
+      tf.concat(xTrains, concatAxis), tf.concat(yTrains, concatAxis),
+      tf.concat(xTests, concatAxis), tf.concat(yTests, concatAxis)
+    ];
   });
 }
 
-function convertToTensors(data, keys) {
+function convertToTensors(data, keys, testSplit) {
   const numExamples = data.length;
 
   const indices = [];
@@ -51,12 +57,20 @@ function convertToTensors(data, keys) {
     shuffledTarget.push(keys[indices[i]]);
   }
 
-  const xDims = shuffledData[0].length;
-  console.log(xDims)
-  const x = tf.tensor2d(shuffledData, [numExamples, xDims]);
-  const y = tf.oneHot(tf.tensor1d(shuffledTarget).toInt(), KEYS_LENGTH);
+  const numTestExamples = Math.round(numExamples * testSplit);
+  const numTrainExamples = numExamples - numTestExamples;
 
-  return [x, y];
+  const xDims = shuffledData[0].length;
+
+  const xs = tf.tensor2d(shuffledData, [numExamples, xDims]);
+  const ys = tf.oneHot(tf.tensor1d(shuffledTarget).toInt(), KEYS_LENGTH);
+
+  const xTrain = xs.slice([0, 0], [numTrainExamples, xDims]);
+  const xTest = xs.slice([numTrainExamples, 0], [numTestExamples, xDims]);
+  const yTrain = ys.slice([0, 0], [numTrainExamples, KEYS_LENGTH]);
+  const yTest = ys.slice([0, 0], [numTestExamples, KEYS_LENGTH]);
+
+  return [xTrain, yTrain, xTest, yTest];
 }
 
 function createModel(xs) {
@@ -64,8 +78,13 @@ function createModel(xs) {
 
   model.add(tf.layers.dense({
     inputShape: [xs.shape[1]],
-    units: 1,
+    units: 4,
     activation: 'sigmoid',
+  }));
+
+  model.add(tf.layers.dense({
+    units: 256,
+    activation: 'relu',
   }));
 
   model.add(tf.layers.dense({
@@ -78,7 +97,7 @@ function createModel(xs) {
   return model;
 }
 
-async function trainModel(model, xs, ys) {
+async function trainModel(model, xTrain, yTrain, xTest, yTest) {
   const optimizer = tf.train.adam(LR);
 
   model.compile({
@@ -87,12 +106,14 @@ async function trainModel(model, xs, ys) {
     metrics: ['accuracy'],
   })
 
-  return await model.fit(xs, ys, {
+  return await model.fit(xTrain, yTrain, {
+    batchSize: 500,
     epochs: 40,
+    validationData: [xTest, yTest],
     callbacks: tfvis.show.fitCallbacks({
         name: 'Training Performance',
       },
-      ['loss', 'mse'], {
+      ['loss', 'mse', 'acc'], {
         height: 200,
         callbacks: ['onEpochEnd']
       }

@@ -10,6 +10,7 @@ class DataRecorder {
 
       // convert key code to one hot array
       const ys = keyCodeToInt(keyCode);
+      console.log(xs);
       const newData = [...xs, ys];
 
       this.dataLength += 1;
