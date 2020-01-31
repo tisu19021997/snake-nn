@@ -83,7 +83,7 @@ function createModel(xs) {
   }));
 
   model.add(tf.layers.dense({
-    units: 1024,
+    units: 32,
     activation: 'relu',
   }));
 
@@ -108,7 +108,7 @@ async function trainModel(model, xTrain, yTrain, xTest, yTest, learningRate = 0.
 
   return await model.fit(xTrain, yTrain, {
     batchSize: 500,
-    epochs: 40,
+    epochs: 60,
     validationData: [xTest, yTest],
     callbacks: tfvis.show.fitCallbacks({
         name: 'Training Performance',

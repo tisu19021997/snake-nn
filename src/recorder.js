@@ -7,14 +7,12 @@ class DataRecorder {
   recordData(snake, keyCode, boardW, boardH) {
     if (this.on) {
       const xs = generateInputs(snake, boardW, boardH);
-
-      // convert key code to one hot array
       const ys = keyCodeToInt(keyCode);
-      console.log(xs);
       const newData = [...xs, ys];
 
       this.dataLength += 1;
-      console.log(this.dataLength)
+      console.log(this.dataLength, xs);
+      
       this.appendToLocal(newData, 'data', []);
     }
   }

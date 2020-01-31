@@ -74,7 +74,7 @@ function predictionToKeyCode(prediction) {
 }
 
 /**
- * Generate the input for the model for the snake current position
+ * Generate the input (or features) for model based on snake's position
  * 
  * @param {object} snake - Snake object
  * @param {number} boardW - Board width
@@ -89,6 +89,9 @@ function generateInputs(snake, boardW, boardH) {
   // snake's x/y is about to be negative
   const cond3 = boolToInt(head.x - 2 <= 0);
   const cond4 = boolToInt(head.y - 2 <= 0);
+  // snake's current direction
+  const cond5 = snake.xDir;
+  const cond6 = snake.yDir;
 
-  return [cond1, cond2, cond3, cond4];
+  return [cond1, cond2, cond3, cond4, cond5, cond6];
 }

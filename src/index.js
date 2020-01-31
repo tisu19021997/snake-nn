@@ -9,7 +9,7 @@ let w;
 let h;
 
 // nerual network
-let dataURL = 'https://tisu19021997.github.io/snake-nn/data.json';
+let dataURL = 'https://tisu19021997.github.io/snake-nn/dataFull.json';
 let data;
 let model;
 let isTrained = false;
@@ -76,9 +76,10 @@ function draw() {
     } = game;
 
     // convert current snake position to inputs
-    const input = tf.tensor2d(generateInputs(snake, w, h), [1, 4]);
-    input.print();
-    const prediction = model.predict(input);
+    const input = generateInputs(snake, w, h);
+    const inputTensor = tf.tensor2d(input, [1, input.length]);
+    inputTensor.print();
+    const prediction = model.predict(inputTensor);
     // get the index of the highest posibility key
     const indice = prediction.argMax(-1).dataSync()[0];
     // convert index back to keyCode
@@ -92,6 +93,7 @@ function draw() {
 
   if (game.isAuto) {
     if (game.key) {
+      dp.turnOn();
       currentKey = game.key;
     }
     dp.recordData(game.snake, currentKey, w, h);
@@ -104,11 +106,10 @@ function draw() {
 
 function keyPressed() {
   if (keyCode >= 37 && keyCode <= 40) {
-    game.snake.move(keyCode);
     currentKey = keyCode;
-
-    dp.turnOn();
     dp.recordData(game.snake, currentKey, w, h);
+
+    game.snake.move(keyCode);
 
     return currentKey;
   }
@@ -148,7 +149,7 @@ function getDataAndTrain() {
   lr = parseFloat(document.getElementById('lr').value) || 0.01;
   ts = parseFloat(document.getElementById('ts').value) || 0.2;
 
-  console.log(typeof ts, typeof lr);
+  console.log(ts, lr);
 
   data = loadJSON(dataURL, async (json) => {
     const [xTrain, yTrain, xTest, yTest] = await processData(json, ts);
