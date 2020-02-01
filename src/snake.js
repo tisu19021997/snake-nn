@@ -105,8 +105,6 @@ class Snake {
       return false;
     }
 
-    let isBiten = false;
-
     for (let i = 1; i < this.length; i++) {
       if (this.body[0].x === this.body[i].x && this.body[0].y === this.body[i].y) {
         return true;

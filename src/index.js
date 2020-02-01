@@ -5,14 +5,18 @@ const WIDTH = 300;
 const HEIGHT = 300;
 
 // board weight and height
-let w;
-let h;
+let w = WIDTH / resolution;
+let h = HEIGHT / resolution;
 
 // nerual network
-let dataURL = 'https://tisu19021997.github.io/snake-nn/dataFull.json';
-let data;
+let data = {
+  url: 'https://tisu19021997.github.io/snake-nn/dataFull.json',
+  body: [],
+};
 let model;
-let isTrained = false;
+let modelTrained;
+
+// learning rate and test split
 let lr;
 let ts;
 
@@ -22,18 +26,19 @@ let tsInput;
 
 // data processor helper
 let dp;
-let started = false;
 let currentKey;
+
+// keycode
+let A_KEY = 65;
+let R_KEY = 82;
+let S_KEY = 83;
+
 
 ////////////////////////////////////////////////
 
 function setup() {
   createCanvas(WIDTH, HEIGHT);
   frameRate(10);
-
-  // width and height responding to the resolution
-  w = width / resolution;
-  h = height / resolution;
 
   // start a new game
   game = new Game(w, h, resolution);
@@ -70,7 +75,7 @@ function draw() {
     game.end();
   }
 
-  if (isTrained) {
+  if (modelTrained) {
     const {
       snake
     } = game;
@@ -78,11 +83,12 @@ function draw() {
     // convert current snake position to inputs
     const input = generateInputs(snake, w, h);
     const inputTensor = tf.tensor2d(input, [1, input.length]);
-    inputTensor.print();
     const prediction = model.predict(inputTensor);
-    // get the index of the highest posibility key
+
+    inputTensor.print();
+
+    // get the index of the highest posibility key and convert it back to keycode
     const indice = prediction.argMax(-1).dataSync()[0];
-    // convert index back to keyCode
     const key = intToKeyCode(indice);
 
     console.log(key);
@@ -97,8 +103,6 @@ function draw() {
       currentKey = game.key;
     }
     dp.recordData(game.snake, currentKey, w, h);
-    // game.autoplay();
-    // frameRate(50);
   }
 }
 
@@ -106,56 +110,47 @@ function draw() {
 
 function keyPressed() {
   if (keyCode >= 37 && keyCode <= 40) {
+    // record the input data and the keycode before changing the direction
     currentKey = keyCode;
     dp.recordData(game.snake, currentKey, w, h);
 
+    // change snake direction
     game.snake.move(keyCode);
 
     return currentKey;
   }
 
-  // press "t" to train
-  if (keyCode === 84) {
-    isTrained = false;
-
-    data = loadJSON(dataURL, async (json) => {
-      const [xTrain, yTrain, xTest, yTest] = await processData(json, ts);
-      model = createModel(xTrain);
-      await trainModel(model, xTrain, yTrain, xTest, yTest);
-
-      isTrained = true;
-    });
-
-  }
-
   // press "a" to autoplay
-  if (keyCode === 65) {
+  if (keyCode === A_KEY) {
     game.setAuto(true);
   }
 
   // press "r" to record data
-  if (keyCode === 82) {
+  if (keyCode === R_KEY) {
     dp.turnOn();
   }
 
   // press "s" to save the model
-  if (keyCode === 83) {
+  if (keyCode === S_KEY) {
     model.save('localstorage://snake-model');
   }
 }
 
 function getDataAndTrain() {
-  isTrained = false;
+  // allow to re-train a model
+  if (model) {
+    modelTrained = false;
+  }
+
+  // learning rate and test split
   lr = parseFloat(document.getElementById('lr').value) || 0.01;
   ts = parseFloat(document.getElementById('ts').value) || 0.2;
 
-  console.log(ts, lr);
-
-  data = loadJSON(dataURL, async (json) => {
+  // load data and train
+  data.body = loadJSON(data.url, async (json) => {
     const [xTrain, yTrain, xTest, yTest] = await processData(json, ts);
-    model = createModel(xTrain);
-    await trainModel(model, xTrain, yTrain, xTest, yTest, lr);
-
-    isTrained = true;
+    model = Model.create(xTrain);
+    await Model.train(model, xTrain, yTrain, xTest, yTest, lr);
+    modelTrained = true;
   })
 }
