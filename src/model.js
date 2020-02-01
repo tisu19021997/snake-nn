@@ -47,7 +47,7 @@ class Model {
     }
     return await model.fit(xTrain, yTrain, {
       batchSize: 500,
-      epochs: 60,
+      epochs: 100,
       validationData: [xTest, yTest],
       callbacks: {
         onEpochEnd: async (epoch, logs) => {

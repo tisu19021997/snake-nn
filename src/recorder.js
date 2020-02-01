@@ -4,16 +4,16 @@ class DataRecorder {
     this.dataLength = 0;
   }
 
-  recordData(snake, keyCode, boardW, boardH) {
+  recordData(snake, food, keyCode, boardW, boardH) {
     if (this.on) {
-      const xs = generateInputs(snake, boardW, boardH);
+      const xs = generateInputs(snake, food, boardW, boardH);
       const ys = keyCodeToInt(keyCode);
       const newData = [...xs, ys];
 
       this.dataLength += 1;
       console.log(this.dataLength, xs);
-      
-      this.appendToLocal(newData, 'data', []);
+
+      this.appendToLocal(newData, 'apple', []);
     }
   }
 

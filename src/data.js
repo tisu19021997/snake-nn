@@ -72,3 +72,45 @@ function convertToTensors(data, keys, testSplit) {
 
   return [xTrain, yTrain, xTest, yTest];
 }
+
+/**
+ * Generate the input (or features) for model based on snake's position
+ * 
+ * @param {object} snake - Snake object
+ * @param {number} boardW - Board width
+ * @param {number} boardH - Board height
+ */
+function generateInputs(snake, food, boardW, boardH) {
+  const head = snake.body[0];
+
+  // snake's x/y is about to be larger than the board width/height
+  const cond1 = boolToInt(head.x + 2 >= boardW);
+  const cond2 = boolToInt(head.y + 2 >= boardH);
+
+  // snake's x/y is about to be negative
+  const cond3 = boolToInt(head.x - 2 <= 0);
+  const cond4 = boolToInt(head.y - 2 <= 0);
+
+  // snake's current direction
+  const cond5 = snake.xDir;
+  const cond6 = snake.yDir;
+
+  // distance between snake and food
+  const maxDistance = dist(0, 0, boardW, boardH);
+  const minDistance = 0;
+  const cond7 = mmNormalize(dist(head.x, head.y, food.x, food.y), minDistance, maxDistance);
+
+  // angle between snake and food
+  const snakeDirectionVector = createVector(snake.xDir, snake.yDir);
+  const snakeFoodVector = toVector(head, food);
+  let cond8 = snakeFoodVector.angleBetween(snakeDirectionVector);
+
+  if (!Number.isNaN(cond8)) {
+    // normalize the angle between -1 and 1
+    cond8 = (degrees(cond8)) / 180;
+  } else {
+    cond8 = 0;
+  }
+
+  return [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8];
+}

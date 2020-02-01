@@ -73,25 +73,16 @@ function predictionToKeyCode(prediction) {
   return oneHotToKeyCode(oneHot(prediction.length, maxIndex));
 }
 
+function mmNormalize(data, min, max) {
+  return (data - min) / (max - min);
+}
+
 /**
- * Generate the input (or features) for model based on snake's position
+ * Create a vector object for two points
  * 
- * @param {object} snake - Snake object
- * @param {number} boardW - Board width
- * @param {number} boardH - Board height
+ * @param {object} p1 - Point 1
+ * @param {object} p2  - Point 2
  */
-function generateInputs(snake, boardW, boardH) {
-  const head = snake.body[0];
-
-  // snake's x/y is about to be larger than the board width/height
-  const cond1 = boolToInt(head.x + 2 >= boardW);
-  const cond2 = boolToInt(head.y + 2 >= boardH);
-  // snake's x/y is about to be negative
-  const cond3 = boolToInt(head.x - 2 <= 0);
-  const cond4 = boolToInt(head.y - 2 <= 0);
-  // snake's current direction
-  const cond5 = snake.xDir;
-  const cond6 = snake.yDir;
-
-  return [cond1, cond2, cond3, cond4, cond5, cond6];
+function toVector(p1, p2) {
+  return createVector(p2.x - p1.x, p2.y - p1.y);
 }

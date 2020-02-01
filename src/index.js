@@ -10,7 +10,8 @@ let h = HEIGHT / resolution;
 
 // nerual network
 let data = {
-  url: 'https://tisu19021997.github.io/snake-nn/dataFull.json',
+  // url: 'https://tisu19021997.github.io/snake-nn/dataFull.json',
+  url: '../dataApple.json',
   body: [],
 };
 let model;
@@ -76,12 +77,8 @@ function draw() {
   }
 
   if (modelTrained) {
-    const {
-      snake
-    } = game;
-
     // convert current snake position to inputs
-    const input = generateInputs(snake, w, h);
+    const input = generateInputs(snake, food, w, h);
     const inputTensor = tf.tensor2d(input, [1, input.length]);
     const prediction = model.predict(inputTensor);
 
@@ -102,7 +99,7 @@ function draw() {
       dp.turnOn();
       currentKey = game.key;
     }
-    dp.recordData(game.snake, currentKey, w, h);
+    dp.recordData(game.snake, game.food, currentKey, w, h);
   }
 }
 
@@ -112,7 +109,7 @@ function keyPressed() {
   if (keyCode >= 37 && keyCode <= 40) {
     // record the input data and the keycode before changing the direction
     currentKey = keyCode;
-    dp.recordData(game.snake, currentKey, w, h);
+    dp.recordData(game.snake, game.food, currentKey, w, h);
 
     // change snake direction
     game.snake.move(keyCode);
