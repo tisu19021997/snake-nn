@@ -176,6 +176,11 @@ function getLocalDataAndTrain() {
 }
 
 function setSelfBite() {
-  selfBiteOn = true;
-  selfBiteBtn.elt.textContent = 'TURN OFF SELF BITE';
+  if (!selfBiteOn) {
+    selfBiteBtn.elt.textContent = 'TURN OFF SELF BITE';
+  } else {
+    selfBiteBtn.elt.textContent = 'TURN ON SELF BITE';
+  }
+
+  selfBiteOn = !selfBiteOn;
 }
