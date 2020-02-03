@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.0.2/dist/tfjs-vis.umd.min.js"></script>
 </head>
 
-<body>
+<body style="font-family:Arial, Helvetica, sans-serif">
   <script src="src/helper.js"></script>
   <script src="src/index.js"></script>
   <script src="src/snake.js"></script>
@@ -23,12 +23,20 @@
 
   <div>
     <div>
-      <span>Learning Rate:</span>
+      <span style="font-weight: bold;">LEARNING RATE:</span>
       <input id="lr" type="text" value="0.01">
     </div>
     <div>
-      <span>Test Split:</span>
+      <span style="font-weight: bold;">TEST SPLIT:</span>
       <input id="ts" type="text" value="0.2">
+    </div>
+    <div>
+      <span style="font-weight: bold;">BATCH SIZE:</span>
+      <input id="bs" type="text" value="500">
+    </div>
+    <div>
+      <span style="font-weight: bold;">EPOCH  :</span>
+      <input id="ep" type="text" value="100">
     </div>
   </div>
 </body>

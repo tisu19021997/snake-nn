@@ -76,41 +76,92 @@ function convertToTensors(data, keys, testSplit) {
 /**
  * Generate the input (or features) for model based on snake's position
  * 
- * @param {object} snake - Snake object
+ * @param {object} game - Game object, includes snake and food
  * @param {number} boardW - Board width
  * @param {number} boardH - Board height
  */
-function generateInputs(snake, food, boardW, boardH) {
-  const head = snake.body[0];
+function generateInputs(game, boardW, boardH) {
+  const {
+    snake,
+    food
+  } = game;
+
+  const {
+    body
+  } = snake;
+  const head = body[0];
+
+  let inputs = [];
 
   // snake's x/y is about to be larger than the board width/height
-  const cond1 = boolToInt(head.x + 2 >= boardW);
-  const cond2 = boolToInt(head.y + 2 >= boardH);
+  const isSnakeOutOfBoardX = boolToInt(head.x + 2 >= boardW);
+  const isSnakeOutOfBoardY = boolToInt(head.y + 2 >= boardH);
 
   // snake's x/y is about to be negative
-  const cond3 = boolToInt(head.x - 2 <= 0);
-  const cond4 = boolToInt(head.y - 2 <= 0);
+  const isNegativeSnakeX = boolToInt(head.x - 2 <= 0);
+  const isNegativeSnakeY = boolToInt(head.y - 2 <= 0);
 
   // snake's current direction
-  const cond5 = snake.xDir;
-  const cond6 = snake.yDir;
+  const snakeXDir = snake.xDir;
+  const snakeYDir = snake.yDir;
 
-  // distance between snake and food
+
   const maxDistance = dist(0, 0, boardW, boardH);
   const minDistance = 0;
-  const cond7 = mmNormalize(dist(head.x, head.y, food.x, food.y), minDistance, maxDistance);
+
+  // snake bites its own body
+  const distanceFromHead = (part) => {
+    return dist(head.x, head.y, part.x, part.y);
+  };
+
+  const distanceSum = () => {
+    if (body.length <= 2) {
+      return 0;
+    }
+
+    let distance = 0;
+    const distanceList = [];
+
+    for (let i = 1; i < body.length; i++) {
+      distanceList.push(distanceFromHead(body[i]));
+    }
+
+    for (let i = 1; i < body.length; i++) {
+      const currentDistance = mmNormalize(distanceFromHead(body[i]), minDistance, maxDistance);
+      distance += currentDistance;
+    }
+
+    console.log(distance);
+
+    return distance;
+  }
+
+  // distance between snake and food
+  const distBetweenSnakeAndFood = mmNormalize(dist(head.x, head.y, food.x, food.y), minDistance, maxDistance);
 
   // angle between snake and food
   const snakeDirectionVector = createVector(snake.xDir, snake.yDir);
   const snakeFoodVector = toVector(head, food);
-  let cond8 = snakeFoodVector.angleBetween(snakeDirectionVector);
+  let angleBetweenSnakeAndFood = snakeFoodVector.angleBetween(snakeDirectionVector);
 
-  if (!Number.isNaN(cond8)) {
+  if (!Number.isNaN(angleBetweenSnakeAndFood)) {
     // normalize the angle between -1 and 1
-    cond8 = (degrees(cond8)) / 180;
+    angleBetweenSnakeAndFood = (degrees(angleBetweenSnakeAndFood)) / 180;
   } else {
-    cond8 = 0;
+    angleBetweenSnakeAndFood = 0;
   }
 
-  return [cond1, cond2, cond3, cond4, cond5, cond6, cond7, cond8];
+  inputs = [
+    isSnakeOutOfBoardX,
+    isSnakeOutOfBoardY,
+    isNegativeSnakeX,
+    isNegativeSnakeY,
+    snakeXDir,
+    snakeYDir,
+    // distanceSum(),
+    // distBetweenSnakeAndFood,
+    angleBetweenSnakeAndFood,
+  ]
+
+  return inputs;
 }

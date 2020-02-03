@@ -73,8 +73,8 @@ function predictionToKeyCode(prediction) {
   return oneHotToKeyCode(oneHot(prediction.length, maxIndex));
 }
 
-function mmNormalize(data, min, max) {
-  return (data - min) / (max - min);
+function mmNormalize(value, min, max) {
+  return (value - min) / (max - min);
 }
 
 /**

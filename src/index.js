@@ -3,6 +3,7 @@ let game;
 let resolution = 10;
 const WIDTH = 300;
 const HEIGHT = 300;
+let selfBiteOn = true;
 
 // board weight and height
 let w = WIDTH / resolution;
@@ -10,20 +11,17 @@ let h = HEIGHT / resolution;
 
 // nerual network
 let data = {
-  // url: 'https://tisu19021997.github.io/snake-nn/dataFull.json',
-  url: '../dataApple.json',
+  url: 'https://tisu19021997.github.io/snake-nn/data.json',
   body: [],
 };
 let model;
 let modelTrained;
 
-// learning rate and test split
-let lr;
-let ts;
-
-// inputs
-let lrInput;
-let tsInput;
+// training params
+let learningRate;
+let testSplit;
+let batchSize;
+let epochs;
 
 // data processor helper
 let dp;
@@ -33,6 +31,11 @@ let currentKey;
 let A_KEY = 65;
 let R_KEY = 82;
 let S_KEY = 83;
+
+// buttons
+let devBtn;
+let trainBtn;
+let selfBiteBtn;
 
 
 ////////////////////////////////////////////////
@@ -47,8 +50,17 @@ function setup() {
 
   dp = new DataRecorder();
 
-  const trainBtn = createButton('Train');
+  devBtn = createButton('TRAIN (DEV ONLY)');
+  devBtn.mousePressed(getLocalDataAndTrain);
+  devBtn.position(WIDTH + 5, 75).size(200, 20);
+
+  trainBtn = createButton('TRAIN');
   trainBtn.mousePressed(getDataAndTrain);
+  trainBtn.position(WIDTH + 5, 50).size(200, 20);
+
+  selfBiteBtn = createButton('TURN ON SELF BITE');
+  selfBiteBtn.mousePressed(setSelfBite);
+  selfBiteBtn.position(WIDTH + 5, 25).size(200, 20);
 }
 
 function draw() {
@@ -71,24 +83,22 @@ function draw() {
   if (game.snakeGotFood()) {
     game.createNewFood();
     snake.grow();
-  } else if (snake.selfBite()) {
+  } else if (selfBiteOn && snake.selfBite()) {
     dp.turnOff();
     game.end();
   }
 
   if (modelTrained) {
     // convert current snake position to inputs
-    const input = generateInputs(snake, food, w, h);
+    const input = generateInputs(game, w, h);
     const inputTensor = tf.tensor2d(input, [1, input.length]);
     const prediction = model.predict(inputTensor);
 
-    inputTensor.print();
+    // inputTensor.print();
 
     // get the index of the highest posibility key and convert it back to keycode
     const indice = prediction.argMax(-1).dataSync()[0];
     const key = intToKeyCode(indice);
-
-    console.log(key);
 
     snake.move(key);
   }
@@ -99,7 +109,7 @@ function draw() {
       dp.turnOn();
       currentKey = game.key;
     }
-    dp.recordData(game.snake, game.food, currentKey, w, h);
+    dp.recordData(game, currentKey, w, h);
   }
 }
 
@@ -109,7 +119,7 @@ function keyPressed() {
   if (keyCode >= 37 && keyCode <= 40) {
     // record the input data and the keycode before changing the direction
     currentKey = keyCode;
-    dp.recordData(game.snake, game.food, currentKey, w, h);
+    dp.recordData(game, currentKey, w, h);
 
     // change snake direction
     game.snake.move(keyCode);
@@ -134,20 +144,38 @@ function keyPressed() {
 }
 
 function getDataAndTrain() {
-  // allow to re-train a model
+  // allow to re-train the model
   if (model) {
     modelTrained = false;
   }
 
-  // learning rate and test split
-  lr = parseFloat(document.getElementById('lr').value) || 0.01;
-  ts = parseFloat(document.getElementById('ts').value) || 0.2;
+  // get training params from user
+  learningRate = parseFloat(document.getElementById('lr').value) || 0.01;
+  batchSize = parseInt(document.getElementById('bs').value, 10) || 500;
+  epochs = parseInt(document.getElementById('ep').value, 10) || 100;
+  testSplit = parseFloat(document.getElementById('ts').value) || 0.2;
+
 
   // load data and train
   data.body = loadJSON(data.url, async (json) => {
-    const [xTrain, yTrain, xTest, yTest] = await processData(json, ts);
+    const [xTrain, yTrain, xTest, yTest] = await processData(json, testSplit);
     model = Model.create(xTrain);
-    await Model.train(model, xTrain, yTrain, xTest, yTest, lr);
+    await Model.train(model, xTrain, yTrain, xTest, yTest, {
+      learningRate,
+      batchSize,
+      epochs,
+    });
     modelTrained = true;
   })
+}
+
+function getLocalDataAndTrain() {
+  data.url = '../data.json';
+
+  return getDataAndTrain();
+}
+
+function setSelfBite() {
+  selfBiteOn = true;
+  selfBiteBtn.elt.textContent = 'TURN OFF SELF BITE';
 }

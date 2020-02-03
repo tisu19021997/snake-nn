@@ -27,7 +27,17 @@ class Model {
     return model;
   }
 
-  static async train(model, xTrain, yTrain, xTest, yTest, learningRate = 0.01) {
+  static async train(model, xTrain, yTrain, xTest, yTest, params = {
+    learningRate: 0.01,
+    batchSize: 500,
+    epochs: 100,
+  }) {
+    const {
+      learningRate,
+      batchSize,
+      epochs
+    } = params;
+
     const optimizer = tf.train.adam(learningRate);
 
     model.compile({
@@ -46,8 +56,8 @@ class Model {
       tab: 'Loss',
     }
     return await model.fit(xTrain, yTrain, {
-      batchSize: 500,
-      epochs: 100,
+      batchSize,
+      epochs,
       validationData: [xTest, yTest],
       callbacks: {
         onEpochEnd: async (epoch, logs) => {
