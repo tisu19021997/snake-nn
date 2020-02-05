@@ -9,7 +9,7 @@ class Model {
     }));
 
     model.add(tf.layers.dense({
-      units: 32,
+      units: 16,
       activation: 'relu',
     }));
 

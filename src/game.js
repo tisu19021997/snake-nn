@@ -23,7 +23,7 @@ class Game {
 
   snakeGotFood() {
     const snakeHead = this.snake.body[0];
-    return snakeHead.x === this.food.x && snakeHead.y === this.food.y
+    return dist(snakeHead.x, snakeHead.y, this.food.x, this.food.y) === 0;
   }
 
   createNewFood() {

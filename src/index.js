@@ -3,7 +3,6 @@ let game;
 let resolution = 10;
 const WIDTH = 300;
 const HEIGHT = 300;
-let selfBiteOn = true;
 
 // board weight and height
 let w = WIDTH / resolution;
@@ -11,7 +10,7 @@ let h = HEIGHT / resolution;
 
 // nerual network
 let data = {
-  url: 'https://tisu19021997.github.io/snake-nn/data.json',
+  url: 'https://tisu19021997.github.io/snake-nn/dataFinal.json',
   body: [],
 };
 let model;
@@ -35,8 +34,6 @@ let S_KEY = 83;
 // buttons
 let devBtn;
 let trainBtn;
-let selfBiteBtn;
-
 
 ////////////////////////////////////////////////
 
@@ -57,10 +54,6 @@ function setup() {
   trainBtn = createButton('TRAIN');
   trainBtn.mousePressed(getDataAndTrain);
   trainBtn.position(WIDTH + 5, 50).size(200, 20);
-
-  selfBiteBtn = createButton('TURN ON SELF BITE');
-  selfBiteBtn.mousePressed(setSelfBite);
-  selfBiteBtn.position(WIDTH + 5, 25).size(200, 20);
 }
 
 function draw() {
@@ -83,18 +76,19 @@ function draw() {
   if (game.snakeGotFood()) {
     game.createNewFood();
     snake.grow();
-  } else if (selfBiteOn && snake.selfBite()) {
+  } else if (snake.selfBite()) {
     dp.turnOff();
     game.end();
   }
 
   if (modelTrained) {
-    // convert current snake position to inputs
+    // convert current snake position to input
     const input = generateInputs(game, w, h);
     const inputTensor = tf.tensor2d(input, [1, input.length]);
+    // make prediction from the input
     const prediction = model.predict(inputTensor);
 
-    // inputTensor.print();
+    inputTensor.print();
 
     // get the index of the highest posibility key and convert it back to keycode
     const indice = prediction.argMax(-1).dataSync()[0];
@@ -170,17 +164,7 @@ function getDataAndTrain() {
 }
 
 function getLocalDataAndTrain() {
-  data.url = '../data.json';
+  data.url = '../dataFinal.json';
 
   return getDataAndTrain();
-}
-
-function setSelfBite() {
-  if (!selfBiteOn) {
-    selfBiteBtn.elt.textContent = 'TURN OFF SELF BITE';
-  } else {
-    selfBiteBtn.elt.textContent = 'TURN ON SELF BITE';
-  }
-
-  selfBiteOn = !selfBiteOn;
 }

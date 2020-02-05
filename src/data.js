@@ -105,39 +105,8 @@ function generateInputs(game, boardW, boardH) {
   const snakeXDir = snake.xDir;
   const snakeYDir = snake.yDir;
 
-
-  const maxDistance = dist(0, 0, boardW, boardH);
-  const minDistance = 0;
-
-  // snake bites its own body
-  const distanceFromHead = (part) => {
-    return dist(head.x, head.y, part.x, part.y);
-  };
-
-  const distanceSum = () => {
-    if (body.length <= 2) {
-      return 0;
-    }
-
-    let distance = 0;
-    const distanceList = [];
-
-    for (let i = 1; i < body.length; i++) {
-      distanceList.push(distanceFromHead(body[i]));
-    }
-
-    for (let i = 1; i < body.length; i++) {
-      const currentDistance = mmNormalize(distanceFromHead(body[i]), minDistance, maxDistance);
-      distance += currentDistance;
-    }
-
-    console.log(distance);
-
-    return distance;
-  }
-
-  // distance between snake and food
-  const distBetweenSnakeAndFood = mmNormalize(dist(head.x, head.y, food.x, food.y), minDistance, maxDistance);
+  // distance from 3 directions everytime the snake move
+  const distBetweenSnakeAndItsBody = snake.look();
 
   // angle between snake and food
   const snakeDirectionVector = createVector(snake.xDir, snake.yDir);
@@ -158,8 +127,7 @@ function generateInputs(game, boardW, boardH) {
     isNegativeSnakeY,
     snakeXDir,
     snakeYDir,
-    // distanceSum(),
-    // distBetweenSnakeAndFood,
+    ...distBetweenSnakeAndItsBody,
     angleBetweenSnakeAndFood,
   ]
 
